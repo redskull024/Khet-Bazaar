@@ -1,0 +1,11 @@
+class Validators {
+  static bool isValidEmail(String email) {
+    final emailRegExp = RegExp(r"^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
+    return emailRegExp.hasMatch(email);
+  }
+
+  static bool isValidPassword(String password) {
+    // Simple password validation: at least 8 characters
+    return password.length >= 8;
+  }
+}

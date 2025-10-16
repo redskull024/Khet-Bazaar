@@ -1,0 +1,126 @@
+{
+  "project_info": {
+    "project_number": "935255341347",
+    "project_id": "khet-bazaar-a225f",
+    "storage_bucket": "khet-bazaar-a225f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:935255341347:android:3880fdd5bb7fa8246c7496",
+        "android_client_info": {
+          "package_name": "com.example.farm_connect"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "935255341347-fim6cpi38bpgj9agn2a5c13gp1orhrru.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoUGNtqbn0AAS0fXlU3NxCawHfnnvN_fA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "935255341347-fim6cpi38bpgj9agn2a5c13gp1orhrru.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "935255341347-eq8972qpukkbkp1abe85j65tfab2pp6n.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.khetBazaar"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:935255341347:android:7a78d3d022cebcbc6c7496",
+        "android_client_info": {
+          "package_name": "com.example.khet_bazaar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "935255341347-fim6cpi38bpgj9agn2a5c13gp1orhrru.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoUGNtqbn0AAS0fXlU3NxCawHfnnvN_fA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "935255341347-fim6cpi38bpgj9agn2a5c13gp1orhrru.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "935255341347-eq8972qpukkbkp1abe85j65tfab2pp6n.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.khetBazaar"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:935255341347:android:f180a192a8309b706c7496",
+        "android_client_info": {
+          "package_name": "com.kb.khetbazaar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "935255341347-d3g6vaj2a5pgkjg6jaln50tbqc31q0uk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kb.khetbazaar",
+            "certificate_hash": "9dd74f3d7e6d9c1e8d2fba05b324b97ae9922c99"
+          }
+        },
+        {
+          "client_id": "935255341347-fim6cpi38bpgj9agn2a5c13gp1orhrru.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoUGNtqbn0AAS0fXlU3NxCawHfnnvN_fA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "935255341347-fim6cpi38bpgj9agn2a5c13gp1orhrru.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "935255341347-eq8972qpukkbkp1abe85j65tfab2pp6n.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.khetBazaar"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
