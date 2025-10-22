@@ -1,98 +1,94 @@
-
+import 'package:farm_connect/src/services/feedback_service.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
-// Placeholder for app-specific colors.
-class AppColors {
-  static const Color cardLightGreen = Color(0xFFE8F5E9); // A light, pleasant green
-  static const Color darkGreen = Color(0xFF1B5E20); // A deep, rich green
+class PurchaseSuccessPage extends StatefulWidget {
+  const PurchaseSuccessPage({Key? key}) : super(key: key);
+
+  @override
+  _PurchaseSuccessPageState createState() => _PurchaseSuccessPageState();
 }
 
-/// A visually appealing screen shown after a successful purchase.
-class PurchaseSuccessPage extends StatelessWidget {
-  const PurchaseSuccessPage({super.key});
+class _PurchaseSuccessPageState extends State<PurchaseSuccessPage> {
+  final _feedbackController = TextEditingController();
+  final _feedbackService = FeedbackService();
+
+  void _submitFeedback() async {
+    if (_feedbackController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your feedback before submitting.'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    try {
+      await _feedbackService.submitFeedback(_feedbackController.text);
+      _feedbackController.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Thank you for your feedback!'), backgroundColor: Colors.blue),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to submit feedback: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.cardLightGreen,
+      backgroundColor: Colors.white,
       body: Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const FaIcon(
-                FontAwesomeIcons.solidCheckCircle,
-                size: 120,
-                color: AppColors.darkGreen,
-              ),
-              const SizedBox(height: 32),
-              const Text(
-                'Thank You for your purchase!',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.darkGreen,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Your order is confirmed and will be processed soon. Visit again!',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.black54,
-                ),
-              ),
+              const Icon(Icons.check_circle, color: Colors.green, size: 100),
+              const SizedBox(height: 24),
+              const Text('Purchase Successful!', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              const Text('Thank you for your order. Your items will be processed shortly.', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: Colors.grey)),
               const SizedBox(height: 48),
-              ElevatedButton(
-                onPressed: () {
-                  context.go('/buyer-dashboard');
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.darkGreen,
-                  padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 18),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+              _buildFeedbackForm(context),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1B5E20), // Dark Green
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                ),
-                child: const Text(
-                  'Continue Shopping',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  onPressed: () => context.go('/buyer-dashboard'),
+                  child: const Text('CONTINUE SHOPPING', style: TextStyle(fontSize: 16, color: Colors.white)),
                 ),
               ),
-              const SizedBox(height: 16),
-              OutlinedButton(
-                onPressed: () {
-                  context.push('/my-orders');
-                },
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppColors.darkGreen),
-                  padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 18),
-                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                child: Text(
-                  'View My Orders',
-                   style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.darkGreen,
-                  ),
-                ),
-              )
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildFeedbackForm(BuildContext context) {
+    return Column(
+      children: [
+        const Text('Leave us some feedback!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _feedbackController,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            hintText: 'Tell us about your experience...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextButton(
+          onPressed: _submitFeedback,
+          child: const Text('Submit Feedback'),
+        ),
+      ],
     );
   }
 }

@@ -41,8 +41,8 @@ dependencies:
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^7.0.1
   cloud_firestore: ^5.1.0
-  shared_preferences: ^2.2.2
-  font_awesome_flutter: ^10.7.0
+  shared_preferences: ^2.5.3
+  font_awesome_flutter: ^10.10.0
   google_fonts: ^6.2.1
   firebase_storage: ^12.1.0
   image_picker: ^1.1.0

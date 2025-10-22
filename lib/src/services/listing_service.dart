@@ -1,91 +1,91 @@
-
-import 'dart:io';
+import 'dart:async';
+import 'dart:math';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:farm_connect/src/models/product_listing_model.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:farm_connect/src/models/product_listing_model.dart';
 
 class ListingService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
+  final Random _random = Random();
 
-  Future<String> _uploadImage(File image, String listingId) async {
-    final ref = _storage.ref().child('product_images').child(listingId).child(DateTime.now().toIso8601String());
-    final uploadTask = await ref.putFile(image);
-    return await uploadTask.ref.getDownloadURL();
-  }
-
-  Future<void> createProductListing(ProductListing listing, List<File> images) async {
+  Future<void> createProductListing(ProductListing listing, List<Uint8List> images) async {
     try {
-      final docRef = _firestore.collection('product_listings').doc();
+      // Upload images with a 60-second timeout.
+      List<String> imageUrls = await _uploadImages(listing.farmerUID, images)
+          .timeout(const Duration(seconds: 60), onTimeout: () => throw TimeoutException('Image upload took too long. Please check your network and Firebase Storage rules.'));
+
+      ProductListing finalListing = _cloneListingWithImageUrls(listing, imageUrls);
       
-      List<String> imageUrls = [];
-      for (var image in images) {
-        imageUrls.add(await _uploadImage(image, docRef.id));
-      }
+      // Save to database with a 15-second timeout.
+      await _firestore.collection('product_listings').add(finalListing.toMap())
+          .timeout(const Duration(seconds: 15), onTimeout: () => throw TimeoutException('Database save timed out.'));
 
-      final newListing = ProductListing(
-        id: docRef.id,
-        productName: listing.productName,
-        description: listing.description,
-        productImageUrls: imageUrls,
-        pricePerUnit: listing.pricePerUnit,
-        quantityUnit: listing.quantityUnit,
-        quantityValue: listing.quantityValue,
-        qualityGrade: listing.qualityGrade,
-        farmerName: listing.farmerName,
-        farmerAddress: listing.farmerAddress,
-        farmerDistrict: listing.farmerDistrict,
-        farmerState: listing.farmerState,
-        farmerPincode: listing.farmerPincode,
-        farmerPhoneNumber: listing.farmerPhoneNumber,
-        farmerUID: listing.farmerUID,
-        status: listing.status,
-        inquiries: listing.inquiries,
-        createdAt: listing.createdAt,
-        updatedAt: listing.updatedAt,
-      );
-
-      await docRef.set(newListing.toMap());
     } catch (e) {
-      print('Error creating product listing: $e');
-      rethrow;
+      // Re-throw with a specific message to be handled by the UI.
+      throw Exception('Error creating product listing: $e');
     }
   }
 
-  Future<void> updateProductListing(String listingId, ProductListing listing, List<File> images) async {
+  Future<void> updateProductListing(String listingId, ProductListing listing, List<Uint8List> newImages) async {
     try {
-      List<String> imageUrls = List.from(listing.productImageUrls); // Keep existing images
-      // Upload new images if any
-      for (var image in images) {
-        imageUrls.add(await _uploadImage(image, listingId));
-      }
+      List<String> newImageUrls = await _uploadImages(listing.farmerUID, newImages)
+        .timeout(const Duration(seconds: 60), onTimeout: () => throw TimeoutException('Image upload timed out.'));
 
-      final updatedListing = ProductListing(
-        id: listingId,
-        productName: listing.productName,
-        description: listing.description,
-        productImageUrls: imageUrls, // New and existing images
-        pricePerUnit: listing.pricePerUnit,
-        quantityUnit: listing.quantityUnit,
-        quantityValue: listing.quantityValue,
-        qualityGrade: listing.qualityGrade,
-        farmerName: listing.farmerName,
-        farmerAddress: listing.farmerAddress,
-        farmerDistrict: listing.farmerDistrict,
-        farmerState: listing.farmerState,
-        farmerPincode: listing.farmerPincode,
-        farmerPhoneNumber: listing.farmerPhoneNumber,
-        farmerUID: listing.farmerUID,
-        status: listing.status,
-        inquiries: listing.inquiries,
-        createdAt: listing.createdAt, // Keep original creation date
-        updatedAt: Timestamp.now(), // Update the timestamp
-      );
-
-      await _firestore.collection('product_listings').doc(listingId).update(updatedListing.toMap());
+      List<String> allImageUrls = List.from(listing.productImageUrls)..addAll(newImageUrls);
+      ProductListing finalListing = _cloneListingWithImageUrls(listing, allImageUrls);
+      
+      await _firestore.collection('product_listings').doc(listingId).update(finalListing.toMap())
+        .timeout(const Duration(seconds: 15), onTimeout: () => throw TimeoutException('Database update timed out.'));
     } catch (e) {
-      print('Error updating product listing: $e');
-      rethrow;
+      throw Exception('Error updating product listing: $e');
     }
+  }
+
+  Future<List<String>> _uploadImages(String farmerUID, List<Uint8List> images) async {
+    List<String> imageUrls = [];
+    if (images.isEmpty) return imageUrls;
+
+    for (final imageBytes in images) {
+      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final String randomPart = _random.nextInt(999999).toString().padLeft(6, '0');
+      final String fileName = '${timestamp}_$randomPart';
+      
+      final Reference storageRef = _storage.ref().child('product_images').child(farmerUID).child(fileName);
+      final UploadTask uploadTask = storageRef.putData(imageBytes);
+      final TaskSnapshot snapshot = await uploadTask;
+      final String downloadUrl = await snapshot.ref.getDownloadURL();
+      imageUrls.add(downloadUrl);
+    }
+    return imageUrls;
+  }
+
+  ProductListing _cloneListingWithImageUrls(ProductListing listing, List<String> imageUrls) {
+    return ProductListing(
+      uuid: listing.uuid,
+      farmerUID: listing.farmerUID,
+      productName: listing.productName,
+      emoji: listing.emoji,
+      productType: listing.productType,
+      isOrganic: listing.isOrganic,
+      quantityValue: listing.quantityValue,
+      quantityUnit: listing.quantityUnit,
+      qualityGrade: listing.qualityGrade,
+      pricePerUnit: listing.pricePerUnit,
+      description: listing.description,
+      productImageUrls: imageUrls,
+      farmerName: listing.farmerName,
+      farmerPhoneNumber: listing.farmerPhoneNumber,
+      farmerAddress: listing.farmerAddress,
+      farmerState: listing.farmerState,
+      farmerDistrict: listing.farmerDistrict,
+      farmerPincode: listing.farmerPincode,
+      id: listing.id,
+      status: listing.status,
+      inquiries: listing.inquiries,
+      createdAt: listing.createdAt,
+      updatedAt: listing.updatedAt,
+    );
   }
 }

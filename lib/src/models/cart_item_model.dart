@@ -1,29 +1,74 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'package:farm_connect/src/models/product_listing_model.dart';
-
-/// Represents a single item in the shopping cart.
 class CartItem {
-  final ProductListing product;
-  final double quantity;
+  final String listingId;
+  final String uuid;
+  final String farmerUID;
+  final String productName;
+  final double quantityInKg;
+  final double pricePerKg;
+  final String imageUrl;
+  final String buyerUID;
+  final Timestamp? timestamp;
 
-  CartItem({required this.product, required this.quantity});
+  CartItem({
+    required this.listingId,
+    required this.uuid,
+    required this.farmerUID,
+    required this.productName,
+    required this.quantityInKg,
+    required this.pricePerKg,
+    required this.imageUrl,
+    required this.buyerUID,
+    this.timestamp,
+  });
 
-  /// Method to calculate the total price for this cart item.
-  double get totalPrice => product.pricePerUnit * quantity;
+  // Getter for calculated total price
+  double get totalPrice => pricePerKg * quantityInKg;
 
-  /// Converts the [CartItem] instance to a map for Firestore.
+  factory CartItem.fromMap(Map<String, dynamic> data) {
+    return CartItem(
+      listingId: data['listingId'] ?? '',
+      uuid: data['uuid'] ?? '',
+      farmerUID: data['farmerUID'] ?? '',
+      productName: data['productName'] ?? '',
+      quantityInKg: (data['quantityInKg'] as num?)?.toDouble() ?? 0.0,
+      pricePerKg: (data['pricePerKg'] as num?)?.toDouble() ?? 0.0,
+      imageUrl: data['imageUrl'] ?? '',
+      buyerUID: data['buyerUID'] ?? '',
+      timestamp: data['timestamp'] as Timestamp?,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
-      'product': product.toMap(),
-      'quantity': quantity,
+      'listingId': listingId,
+      'uuid': uuid,
+      'farmerUID': farmerUID,
+      'productName': productName,
+      'quantityInKg': quantityInKg,
+      'pricePerKg': pricePerKg,
+      'imageUrl': imageUrl,
+      'buyerUID': buyerUID,
+      'timestamp': timestamp ?? FieldValue.serverTimestamp(),
     };
   }
 
-  /// Factory constructor to create a [CartItem] from a map.
-  factory CartItem.fromMap(Map<String, dynamic> map) {
+  // copyWith method to easily update instances
+  CartItem copyWith({
+    double? quantityInKg,
+  }) {
     return CartItem(
-      product: ProductListing.fromMap(map['product']), // Assumes ProductListing has fromMap
-      quantity: (map['quantity'] as num).toDouble(),
+      listingId: listingId,
+      uuid: uuid,
+      farmerUID: farmerUID,
+      productName: productName,
+      quantityInKg: quantityInKg ?? this.quantityInKg,
+      pricePerKg: pricePerKg,
+      imageUrl: imageUrl,
+      buyerUID: buyerUID,
+      timestamp: timestamp,
     );
   }
 }
+

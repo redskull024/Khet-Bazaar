@@ -125,7 +125,7 @@ class MyOrdersPage extends StatelessWidget {
         const SizedBox(height: 8),
         Text(deliveryInfo.fullName, style: const TextStyle(fontWeight: FontWeight.w500)),
         Text(deliveryInfo.addressLine1),
-        Text('Pincode: ${deliveryInfo.pincode}'),
+        Text('${deliveryInfo.city}, ${deliveryInfo.state} - ${deliveryInfo.pincode}'),
         Text('Mobile: ${deliveryInfo.mobileNumber}'),
       ],
     );
@@ -140,12 +140,11 @@ class MyOrdersPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.product.productName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text('From: ${item.product.farmerName}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                Text(item.productName, style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
           ),
-          Text('${item.quantity} ${item.product.quantityUnit}'),
+          Text('${item.quantityInKg} kg'),
         ],
       ),
     );

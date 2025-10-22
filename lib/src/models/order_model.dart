@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:farm_connect/src/models/cart_item_model.dart';
 import 'package:farm_connect/src/models/delivery_info_model.dart';

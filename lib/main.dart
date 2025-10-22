@@ -1,4 +1,4 @@
-
+import 'package:farm_connect/src/models/product_listing_model.dart';
 import 'package:farm_connect/src/screens/cart_page.dart';
 import 'package:farm_connect/src/screens/my_orders_page.dart';
 import 'package:farm_connect/src/screens/purchase_success_page.dart';
@@ -13,10 +13,11 @@ import 'firebase_options.dart';
 import 'src/features/auth/auth_service.dart';
 import 'src/features/auth/login_page.dart';
 import 'src/features/language_selection/language_selection_screen.dart';
-import 'src/features/role_selection/role_selection_screen.dart';
+import 'package:farm_connect/src/features/role_selection/presentation/role_selection_screen.dart';
 import 'src/features/dashboard/farmer_dashboard_screen.dart';
 import 'src/features/dashboard/buyer_dashboard_screen.dart';
 import 'src/features/dashboard/create_listing_page.dart';
+import 'src/features/buyer/presentation/screens/product_detail_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,12 +46,8 @@ class MyApp extends StatelessWidget {
 
 // --- ROUTER CONFIGURATION ---
 final _router = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/language-selection',
   routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const Wrapper(),
-    ),
     GoRoute(
       path: '/language-selection',
       builder: (context, state) => const LanguageSelectionScreen(),
@@ -70,6 +67,18 @@ final _router = GoRouter(
     GoRoute(
       path: '/buyer-dashboard',
       builder: (context, state) => const BuyerDashboardScreen(),
+    ),
+    GoRoute(
+      path: '/product-detail/:productId',
+      builder: (context, state) {
+        final productId = state.pathParameters['productId'];
+        if (productId != null) {
+          return ProductDetailPage(productId: productId);
+        } else {
+          // Redirect or show an error if the ID is missing
+          return const BuyerDashboardScreen();
+        }
+      },
     ),
     GoRoute(
       path: '/create-listing',
@@ -120,27 +129,3 @@ final _router = GoRouter(
     return null;
   },
 );
-
-/// The Wrapper widget determines the initial route.
-class Wrapper extends StatefulWidget {
-  const Wrapper({super.key});
-
-  @override
-  State<Wrapper> createState() => _WrapperState();
-}
-
-class _WrapperState extends State<Wrapper> {
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
-  }
-}

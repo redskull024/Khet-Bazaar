@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:farm_connect/src/models/product_listing_model.dart';
 import 'package:farm_connect/src/services/auth_service.dart';
-import 'package:farm_connect/src/features/auth/presentation/screens/login_screen.dart';
+import 'package:go_router/go_router.dart';
 
 /// Main dashboard screen for users with the 'buyer' role.
 class BuyerDashboardScreen extends StatelessWidget {
@@ -79,10 +79,7 @@ class BuyerDashboardScreen extends StatelessWidget {
           label: const Text('Logout', style: TextStyle(color: Colors.white)),
           onPressed: () async {
             await AuthService().signOut();
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
-              (Route<dynamic> route) => false,
-            );
+            context.go('/language-selection');
           },
         ),
         const SizedBox(width: 10),

@@ -1,5 +1,5 @@
-
-import 'dart:io';
+import 'dart:math';
+import 'dart:typed_data';
 import 'package:farm_connect/src/models/product_listing_model.dart';
 import 'package:farm_connect/src/services/listing_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,7 +21,6 @@ class _CreateListingPageState extends State<CreateListingPage> {
   final ListingService _listingService = ListingService();
   bool _isLoading = false;
   bool get _isEditMode => widget.listingId != null;
-  ProductListing? _existingListing;
 
   // Controllers
   final _productNameController = TextEditingController();
@@ -34,11 +33,14 @@ class _CreateListingPageState extends State<CreateListingPage> {
   final _stateController = TextEditingController();
   final _districtController = TextEditingController();
   final _pincodeController = TextEditingController();
+  final _emojiController = TextEditingController();
 
   // State variables
-  String? _quantityUnit = 'kg';
-  String? _qualityGrade = 'Premium';
-  final List<File> _selectedImages = [];
+  String _productType = 'Fruit';
+  bool _isOrganic = false;
+  String _quantityUnit = 'kg';
+  String _qualityGrade = 'A';
+  final List<Uint8List> _selectedImages = [];
   List<String> _existingImageUrls = [];
 
   @override
@@ -56,9 +58,9 @@ class _CreateListingPageState extends State<CreateListingPage> {
     try {
       final doc = await FirebaseFirestore.instance.collection('product_listings').doc(widget.listingId!).get();
       final listing = ProductListing.fromFirestore(doc);
-      _existingListing = listing;
 
       _productNameController.text = listing.productName;
+      _emojiController.text = listing.emoji;
       _quantityValueController.text = listing.quantityValue.toString();
       _pricePerUnitController.text = listing.pricePerUnit.toString();
       _descriptionController.text = listing.description;
@@ -68,14 +70,19 @@ class _CreateListingPageState extends State<CreateListingPage> {
       _stateController.text = listing.farmerState;
       _districtController.text = listing.farmerDistrict;
       _pincodeController.text = listing.farmerPincode;
-      _quantityUnit = listing.quantityUnit;
-      _qualityGrade = listing.qualityGrade;
-      _existingImageUrls = List<String>.from(listing.productImageUrls);
+      
+      setState(() {
+        _productType = listing.productType;
+        _isOrganic = listing.isOrganic;
+        _quantityUnit = listing.quantityUnit;
+        _qualityGrade = listing.qualityGrade;
+        _existingImageUrls = List<String>.from(listing.productImageUrls);
+      });
 
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load listing: $e')));
     } finally {
-      setState(() => _isLoading = false);
+      if(mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -84,9 +91,14 @@ class _CreateListingPageState extends State<CreateListingPage> {
     if (user != null) {
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
       if (userDoc.exists) {
+        final data = userDoc.data()!;
         setState(() {
-          _farmerNameController.text = userDoc.data()?['name'] ?? '';
-          _phoneNumberController.text = user.phoneNumber ?? '';
+          _farmerNameController.text = data['name'] ?? '';
+          _phoneNumberController.text = data['phoneNumber'] ?? user.phoneNumber ?? '';
+          _addressController.text = data['address'] ?? '';
+          _stateController.text = data['state'] ?? '';
+          _districtController.text = data['district'] ?? '';
+          _pincodeController.text = data['pincode'] ?? '';
         });
       }
     }
@@ -94,12 +106,20 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
   Future<void> _pickImages() async {
     final picker = ImagePicker();
-    final pickedFiles = await picker.pickMultiImage();
-    if (pickedFiles != null) {
-      setState(() {
-        _selectedImages.addAll(pickedFiles.map((file) => File(file.path)));
-      });
+    final pickedFiles = await picker.pickMultiImage(imageQuality: 80);
+    for (var file in pickedFiles) {
+      _selectedImages.add(await file.readAsBytes());
     }
+    setState(() {});
+  }
+
+  String _generateProductId(String productName) {
+    final random = Random();
+    final productCode = productName.length >= 2
+        ? productName.substring(0, 2).toLowerCase()
+        : productName.toLowerCase();
+    final randomNumber = random.nextInt(10000).toString().padLeft(4, '0');
+    return '$productCode$randomNumber';
   }
 
   Future<void> _submitForm() async {
@@ -113,26 +133,28 @@ class _CreateListingPageState extends State<CreateListingPage> {
         return;
       }
 
+      final String uuid = _isEditMode ? (await FirebaseFirestore.instance.collection('product_listings').doc(widget.listingId!).get()).data()!['uuid'] : _generateProductId(_productNameController.text);
+
       final listingData = ProductListing(
-        id: _isEditMode ? widget.listingId! : '', // Use existing ID in edit mode
+        id: _isEditMode ? widget.listingId! : null,
+        uuid: uuid,
         farmerUID: user.uid,
         productName: _productNameController.text,
+        productType: _productType,
+        isOrganic: _isOrganic,
+        emoji: _emojiController.text,
         quantityValue: double.tryParse(_quantityValueController.text) ?? 0,
-        quantityUnit: _quantityUnit!,
-        qualityGrade: _qualityGrade!,
+        quantityUnit: _quantityUnit,
+        qualityGrade: _qualityGrade,
         pricePerUnit: double.tryParse(_pricePerUnitController.text) ?? 0,
         description: _descriptionController.text,
-        productImageUrls: _existingImageUrls, // Pass existing URLs
+        productImageUrls: _existingImageUrls,
         farmerName: _farmerNameController.text,
         farmerPhoneNumber: _phoneNumberController.text,
         farmerAddress: _addressController.text,
         farmerState: _stateController.text,
         farmerDistrict: _districtController.text,
         farmerPincode: _pincodeController.text,
-        status: _existingListing?.status ?? 'Active',
-        inquiries: _existingListing?.inquiries ?? 0,
-        createdAt: _existingListing?.createdAt ?? Timestamp.now(),
-        updatedAt: Timestamp.now(),
       );
 
       try {
@@ -147,7 +169,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to save listing: $e')));
       } finally {
-        setState(() => _isLoading = false);
+        if(mounted) setState(() => _isLoading = false);
       }
     }
   }
@@ -170,14 +192,26 @@ class _CreateListingPageState extends State<CreateListingPage> {
                   children: [
                     Text(_isEditMode ? 'Edit Product Listing' : 'Create Product Listing', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 24),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: _buildProductInfoColumn()),
-                        const SizedBox(width: 24),
-                        Expanded(child: _buildFarmerInfoColumn()),
-                      ],
-                    ),
+                    LayoutBuilder(builder: (context, constraints) {
+                      if (constraints.maxWidth > 700) {
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: _buildProductInfoColumn()),
+                            const SizedBox(width: 24),
+                            Expanded(child: _buildFarmerInfoColumn()),
+                          ],
+                        );
+                      } else {
+                        return Column(
+                          children: [
+                            _buildProductInfoColumn(),
+                            const SizedBox(height: 24),
+                            _buildFarmerInfoColumn(),
+                          ],
+                        );
+                      }
+                    }),
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
@@ -196,66 +230,50 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
   Widget _buildProductInfoColumn() {
     return Card(
-      color: Colors.lightGreen[50],
+      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Product Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _productNameController,
-              decoration: const InputDecoration(labelText: '🌾 Product Name *'),
-              validator: (value) => value!.isEmpty ? 'Please enter a product name' : null,
+            const Divider(),
+            TextFormField(controller: _productNameController, decoration: const InputDecoration(labelText: 'Product Name *'), validator: (v) => v!.isEmpty ? 'Required' : null),
+            TextFormField(controller: _emojiController, decoration: const InputDecoration(labelText: 'Product Emoji (e.g., 🍎)')),
+            DropdownButtonFormField<String>(
+              value: _productType,
+              decoration: const InputDecoration(labelText: 'Product Type'),
+              items: ['Fruit', 'Vegetable'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+              onChanged: (v) => setState(() => _productType = v!),
             ),
-            const SizedBox(height: 16),
+            SwitchListTile(
+              title: const Text('Is Organic?'),
+              value: _isOrganic,
+              onChanged: (v) => setState(() => _isOrganic = v),
+              contentPadding: EdgeInsets.zero,
+            ),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _quantityValueController,
-                    decoration: const InputDecoration(labelText: 'Quantity *'),
-                    keyboardType: TextInputType.number,
-                    validator: (value) => value!.isEmpty ? 'Enter quantity' : null,
-                  ),
-                ),
+                Expanded(child: TextFormField(controller: _quantityValueController, decoration: const InputDecoration(labelText: 'Quantity *'), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Required' : null)),
                 const SizedBox(width: 10),
                 DropdownButton<String>(
                   value: _quantityUnit,
-                  items: ['kg', 'quintal', 'ton'].map((unit) => DropdownMenuItem(value: unit, child: Text(unit))).toList(),
-                  onChanged: (value) => setState(() => _quantityUnit = value),
+                  items: ['kg', 'quintal'].map((unit) => DropdownMenuItem(value: unit, child: Text(unit))).toList(),
+                  onChanged: (value) => setState(() => _quantityUnit = value!),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               value: _qualityGrade,
               decoration: const InputDecoration(labelText: 'Quality Grade'),
-              items: ['Premium', 'Grade A', 'Standard'].map((grade) => DropdownMenuItem(value: grade, child: Text(grade))).toList(),
-              onChanged: (value) => setState(() => _qualityGrade = value),
+              items: ['A', 'B', 'C'].map((grade) => DropdownMenuItem(value: grade, child: Text(grade))).toList(),
+              onChanged: (value) => setState(() => _qualityGrade = value!),
             ),
+            TextFormField(controller: _pricePerUnitController, decoration: const InputDecoration(labelText: 'Price per Unit (₹) *'), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Required' : null),
+            TextFormField(controller: _descriptionController, decoration: const InputDecoration(labelText: 'Description'), maxLines: 3),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: _pricePerUnitController,
-              decoration: const InputDecoration(labelText: 'Price per Unit (₹) *'),
-              keyboardType: TextInputType.number,
-              validator: (value) => value!.isEmpty ? 'Enter a price' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(labelText: 'Description'),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 16),
-            const Text('Product Images'),
-            const SizedBox(height: 8),
-            ElevatedButton.icon(
-              onPressed: _pickImages,
-              icon: const Icon(Icons.upload_file),
-              label: const Text('Upload New Images'),
-            ),
+            OutlinedButton.icon(onPressed: _pickImages, icon: const Icon(Icons.upload_file), label: const Text('Upload Images')),
             if (_existingImageUrls.isNotEmpty || _selectedImages.isNotEmpty)
               SizedBox(
                 height: 100,
@@ -266,8 +284,8 @@ class _CreateListingPageState extends State<CreateListingPage> {
                     if (index < _existingImageUrls.length) {
                       return Padding(padding: const EdgeInsets.all(8.0), child: Image.network(_existingImageUrls[index]));
                     }
-                    final imageFile = _selectedImages[index - _existingImageUrls.length];
-                    return Padding(padding: const EdgeInsets.all(8.0), child: Image.file(imageFile));
+                    final imageBytes = _selectedImages[index - _existingImageUrls.length];
+                    return Padding(padding: const EdgeInsets.all(8.0), child: Image.memory(imageBytes));
                   },
                 ),
               ),
@@ -279,46 +297,20 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
   Widget _buildFarmerInfoColumn() {
     return Card(
-      color: Colors.lightGreen[50],
+      elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Farmer Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _farmerNameController,
-              decoration: const InputDecoration(labelText: 'Full Name *'),
-              readOnly: true, // Auto-filled
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _phoneNumberController,
-              decoration: const InputDecoration(labelText: 'Phone Number'),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _addressController,
-              decoration: const InputDecoration(labelText: 'Farm Address'),
-              maxLines: 2,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _stateController,
-              decoration: const InputDecoration(labelText: 'State'),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _districtController,
-              decoration: const InputDecoration(labelText: 'District'),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _pincodeController,
-              decoration: const InputDecoration(labelText: 'Pincode'),
-              keyboardType: TextInputType.number,
-            ),
+            const Divider(),
+            TextFormField(controller: _farmerNameController, decoration: const InputDecoration(labelText: 'Full Name *'), readOnly: true),
+            TextFormField(controller: _phoneNumberController, decoration: const InputDecoration(labelText: 'Phone Number')),
+            TextFormField(controller: _addressController, decoration: const InputDecoration(labelText: 'Farm Address'), maxLines: 2),
+            TextFormField(controller: _stateController, decoration: const InputDecoration(labelText: 'State')),
+            TextFormField(controller: _districtController, decoration: const InputDecoration(labelText: 'District')),
+            TextFormField(controller: _pincodeController, decoration: const InputDecoration(labelText: 'Pincode'), keyboardType: TextInputType.number),
           ],
         ),
       ),
