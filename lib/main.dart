@@ -1,3 +1,4 @@
+import 'package:farm_connect/src/features/dashboard/about_us_page.dart';
 import 'package:farm_connect/src/models/product_listing_model.dart';
 import 'package:farm_connect/src/screens/cart_page.dart';
 import 'package:farm_connect/src/screens/my_orders_page.dart';
@@ -14,8 +15,8 @@ import 'src/features/auth/auth_service.dart';
 import 'src/features/auth/login_page.dart';
 import 'src/features/language_selection/language_selection_screen.dart';
 import 'package:farm_connect/src/features/role_selection/presentation/role_selection_screen.dart';
-import 'src/features/dashboard/farmer_dashboard_screen.dart';
-import 'src/features/dashboard/buyer_dashboard_screen.dart';
+import 'package:farm_connect/src/features/dashboard/farmer_dashboard_home.dart';
+import 'package:farm_connect/src/features/dashboard/buyer_dashboard_screen.dart';
 import 'src/features/dashboard/create_listing_page.dart';
 import 'src/features/buyer/presentation/screens/product_detail_page.dart';
 
@@ -62,11 +63,18 @@ final _router = GoRouter(
     ),
     GoRoute(
       path: '/farmer-dashboard',
-      builder: (context, state) => const FarmerDashboardScreen(),
+      builder: (context, state) => const FarmerHomePage(),
     ),
     GoRoute(
       path: '/buyer-dashboard',
       builder: (context, state) => const BuyerDashboardScreen(),
+    ),
+    GoRoute(
+      path: '/about-us',
+      builder: (context, state) {
+        final isBuyer = state.extra as bool? ?? false;
+        return AboutUsPage(isBuyer: isBuyer);
+      },
     ),
     GoRoute(
       path: '/product-detail/:productId',

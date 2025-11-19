@@ -25,11 +25,11 @@ class CartNotifier extends AsyncNotifier<List<CartItem>> {
     });
   }
 
-  Future<void> removeFromCart(String listingId) async {
+  Future<void> removeItem(String listingId) async {
     final cartService = ref.read(cartServiceProvider);
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      await cartService.removeFromCart(listingId);
+      await cartService.removeItem(listingId);
       return ref.watch(cartStreamProvider.future);
     });
   }

@@ -1,5 +1,4 @@
-import 'dart:async';
-import 'dart:math';
+
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -8,84 +7,109 @@ import 'package:farm_connect/src/models/product_listing_model.dart';
 class ListingService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
-  final Random _random = Random();
 
   Future<void> createProductListing(ProductListing listing, List<Uint8List> images) async {
     try {
-      // Upload images with a 60-second timeout.
-      List<String> imageUrls = await _uploadImages(listing.farmerUID, images)
-          .timeout(const Duration(seconds: 60), onTimeout: () => throw TimeoutException('Image upload took too long. Please check your network and Firebase Storage rules.'));
+      List<String> imageUrls = [];
+      if (images.isNotEmpty) {
+        imageUrls = await _uploadImages(listing.uuid, images);
+      }
 
-      ProductListing finalListing = _cloneListingWithImageUrls(listing, imageUrls);
-      
-      // Save to database with a 15-second timeout.
-      await _firestore.collection('product_listings').add(finalListing.toMap())
-          .timeout(const Duration(seconds: 15), onTimeout: () => throw TimeoutException('Database save timed out.'));
+      // Fetch farmer's name from the users collection to ensure it's accurate
+      final userDoc = await _firestore.collection('users').doc(listing.farmerUID).get();
+      final farmerName = (userDoc.data() as Map<String, dynamic>?)?['name'] as String? ?? 'Unknown Farmer';
 
+
+
+      final finalListing = ProductListing(
+        id: listing.id,
+        uuid: listing.uuid,
+        farmerUID: listing.farmerUID,
+        productName: listing.productName,
+        emoji: listing.emoji,
+        productType: listing.productType,
+        isOrganic: listing.isOrganic,
+        quantityValue: listing.quantityValue,
+        quantityUnit: listing.quantityUnit,
+        qualityGrade: listing.qualityGrade,
+        pricePerUnit: listing.pricePerUnit,
+        description: listing.description,
+        productImageUrls: imageUrls, // Use uploaded image URLs
+        farmerName: farmerName,
+        farmerPhoneNumber: listing.farmerPhoneNumber,
+        farmerAddress: listing.farmerAddress,
+        farmerState: listing.farmerState,
+        farmerDistrict: listing.farmerDistrict,
+        farmerPincode: listing.farmerPincode,
+      );
+
+      await _firestore.collection('product_listings').add(finalListing.toMap());
     } catch (e) {
-      // Re-throw with a specific message to be handled by the UI.
       throw Exception('Error creating product listing: $e');
     }
   }
 
-  Future<void> updateProductListing(String listingId, ProductListing listing, List<Uint8List> newImages) async {
-    try {
-      List<String> newImageUrls = await _uploadImages(listing.farmerUID, newImages)
-        .timeout(const Duration(seconds: 60), onTimeout: () => throw TimeoutException('Image upload timed out.'));
+  Future<void> updateProductListing(ProductListing listing, List<Uint8List> newImages) async {
+    if (listing.id == null) {
+      throw Exception('Listing ID is required to update.');
+    }
 
-      List<String> allImageUrls = List.from(listing.productImageUrls)..addAll(newImageUrls);
-      ProductListing finalListing = _cloneListingWithImageUrls(listing, allImageUrls);
-      
-      await _firestore.collection('product_listings').doc(listingId).update(finalListing.toMap())
-        .timeout(const Duration(seconds: 15), onTimeout: () => throw TimeoutException('Database update timed out.'));
+    try {
+      List<String> newImageUrls = [];
+      if (newImages.isNotEmpty) {
+        newImageUrls = await _uploadImages(listing.uuid, newImages);
+      }
+
+      // Combine old and new images
+      final allImageUrls = [...listing.productImageUrls, ...newImageUrls];
+
+      final finalListing = ProductListing(
+        id: listing.id,
+        uuid: listing.uuid,
+        farmerUID: listing.farmerUID,
+        productName: listing.productName,
+        emoji: listing.emoji,
+        productType: listing.productType,
+        isOrganic: listing.isOrganic,
+        quantityValue: listing.quantityValue,
+        quantityUnit: listing.quantityUnit,
+        qualityGrade: listing.qualityGrade,
+        pricePerUnit: listing.pricePerUnit,
+        description: listing.description,
+        productImageUrls: allImageUrls,
+        farmerName: listing.farmerName,
+        farmerPhoneNumber: listing.farmerPhoneNumber,
+        farmerAddress: listing.farmerAddress,
+        farmerState: listing.farmerState,
+        farmerDistrict: listing.farmerDistrict,
+        farmerPincode: listing.farmerPincode,
+        createdAt: listing.createdAt, // Preserve original creation date
+      );
+
+      await _firestore.collection('product_listings').doc(listing.id).update(finalListing.toMap());
     } catch (e) {
       throw Exception('Error updating product listing: $e');
     }
   }
 
-  Future<List<String>> _uploadImages(String farmerUID, List<Uint8List> images) async {
+  Future<List<String>> _uploadImages(String productId, List<Uint8List> images) async {
     List<String> imageUrls = [];
-    if (images.isEmpty) return imageUrls;
-
-    for (final imageBytes in images) {
-      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      final String randomPart = _random.nextInt(999999).toString().padLeft(6, '0');
-      final String fileName = '${timestamp}_$randomPart';
-      
-      final Reference storageRef = _storage.ref().child('product_images').child(farmerUID).child(fileName);
-      final UploadTask uploadTask = storageRef.putData(imageBytes);
-      final TaskSnapshot snapshot = await uploadTask;
-      final String downloadUrl = await snapshot.ref.getDownloadURL();
+    for (var i = 0; i < images.length; i++) {
+      final ref = _storage.ref().child('product_images/$productId/image_$i.jpg');
+      final uploadTask = ref.putData(images[i], SettableMetadata(contentType: 'image/jpeg'));
+      final snapshot = await uploadTask.whenComplete(() => {});
+      final downloadUrl = await snapshot.ref.getDownloadURL();
       imageUrls.add(downloadUrl);
     }
     return imageUrls;
   }
 
-  ProductListing _cloneListingWithImageUrls(ProductListing listing, List<String> imageUrls) {
-    return ProductListing(
-      uuid: listing.uuid,
-      farmerUID: listing.farmerUID,
-      productName: listing.productName,
-      emoji: listing.emoji,
-      productType: listing.productType,
-      isOrganic: listing.isOrganic,
-      quantityValue: listing.quantityValue,
-      quantityUnit: listing.quantityUnit,
-      qualityGrade: listing.qualityGrade,
-      pricePerUnit: listing.pricePerUnit,
-      description: listing.description,
-      productImageUrls: imageUrls,
-      farmerName: listing.farmerName,
-      farmerPhoneNumber: listing.farmerPhoneNumber,
-      farmerAddress: listing.farmerAddress,
-      farmerState: listing.farmerState,
-      farmerDistrict: listing.farmerDistrict,
-      farmerPincode: listing.farmerPincode,
-      id: listing.id,
-      status: listing.status,
-      inquiries: listing.inquiries,
-      createdAt: listing.createdAt,
-      updatedAt: listing.updatedAt,
-    );
+  Future<ProductListing> getProductListing(String listingId) async {
+    try {
+      final doc = await _firestore.collection('product_listings').doc(listingId).get();
+      return ProductListing.fromFirestore(doc);
+    } catch (e) {
+      throw Exception('Error fetching product listing: $e');
+    }
   }
 }

@@ -1,12 +1,12 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:farm_connect/src/models/purchase_model.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:intl/intl.dart';
 
 class SalesOverviewWidget extends StatefulWidget {
-  final String uid;
+  final List<PurchaseModel> purchases;
 
-  const SalesOverviewWidget({Key? key, required this.uid}) : super(key: key);
+  const SalesOverviewWidget({Key? key, required this.purchases}) : super(key: key);
 
   @override
   _SalesOverviewWidgetState createState() => _SalesOverviewWidgetState();
@@ -15,54 +15,40 @@ class SalesOverviewWidget extends StatefulWidget {
 class _SalesOverviewWidgetState extends State<SalesOverviewWidget> {
   String _salesPeriod = 'Daily';
 
-  // This stream now listens to the orders and maps them to the aggregated data structure.
-  Stream<List<Map<String, dynamic>>> _getAggregatedSalesStream() {
-    return FirebaseFirestore.instance
-        .collection('orders')
-        .where('farmerUID', isEqualTo: widget.uid)
-        .snapshots()
-        .map((snapshot) {
-      return _aggregateSales(snapshot.docs, _salesPeriod);
-    });
-  }
-
-  // This function now correctly processes the nested items array in each order.
-  List<Map<String, dynamic>> _aggregateSales(List<QueryDocumentSnapshot> orderDocs, String period) {
+  List<Map<String, dynamic>> _aggregateSales(List<PurchaseModel> purchases, String period) {
     Map<String, double> aggregatedData = {};
     DateTime now = DateTime.now();
 
-    for (var orderDoc in orderDocs) {
-      final orderData = orderDoc.data() as Map<String, dynamic>;
-      final timestamp = (orderData['createdAt'] as Timestamp?)?.toDate();
-      if (timestamp == null) continue;
+    for (var purchase in purchases) {
+      final timestamp = purchase.purchasedDate.toDate();
+      final double revenue = purchase.totalPrice;
 
-      final items = orderData['items'] as List<dynamic>? ?? [];
-      double orderRevenue = 0;
-      for (var item in items) {
-        final itemData = item as Map<String, dynamic>;
-        final price = (itemData['pricePerKg'] as num?)?.toDouble() ?? 0.0;
-        final quantity = (itemData['quantityInKg'] as num?)?.toDouble() ?? 0.0;
-        orderRevenue += price * quantity;
-      }
-
-      // Group the calculated revenue by the selected time period.
       if (period == 'Daily') {
         if (now.difference(timestamp).inDays < 7) {
           String day = DateFormat('E').format(timestamp); // MON, TUE, etc.
-          aggregatedData.update(day, (value) => value + orderRevenue, ifAbsent: () => orderRevenue);
+          aggregatedData.update(day, (value) => value + revenue, ifAbsent: () => revenue);
         }
       } else if (period == 'Weekly') {
         int weekDiff = now.difference(timestamp).inDays ~/ 7;
         if (weekDiff < 4) {
           String weekLabel = 'W${4 - weekDiff}';
-           aggregatedData.update(weekLabel, (value) => value + orderRevenue, ifAbsent: () => orderRevenue);
+          aggregatedData.update(weekLabel, (value) => value + revenue, ifAbsent: () => revenue);
         }
       } else if (period == 'Monthly') {
         if (now.year == timestamp.year && now.month - timestamp.month < 6) {
           String month = DateFormat('MMM').format(timestamp);
-          aggregatedData.update(month, (value) => value + orderRevenue, ifAbsent: () => orderRevenue);
+          aggregatedData.update(month, (value) => value + revenue, ifAbsent: () => revenue);
         }
       }
+    }
+
+    // Ensure order for daily and monthly for chart display
+    if (period == 'Daily') {
+      final sortedDays = {'Mon': 0.0, 'Tue': 0.0, 'Wed': 0.0, 'Thu': 0.0, 'Fri': 0.0, 'Sat': 0.0, 'Sun': 0.0};
+      aggregatedData.forEach((key, value) {
+        if(sortedDays.containsKey(key)) sortedDays[key] = value;
+      });
+      return sortedDays.entries.map((e) => {'label': e.key, 'value': e.value}).toList();
     }
 
     return aggregatedData.entries.map((e) => {'label': e.key, 'value': e.value}).toList();
@@ -70,6 +56,9 @@ class _SalesOverviewWidgetState extends State<SalesOverviewWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final salesData = _aggregateSales(widget.purchases, _salesPeriod);
+    final maxValue = salesData.isNotEmpty ? (salesData.map((d) => d['value'] as num).reduce(max)).toDouble() : 0.0;
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -86,25 +75,10 @@ class _SalesOverviewWidgetState extends State<SalesOverviewWidget> {
               ],
             ),
             const SizedBox(height: 24),
-            StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _getAggregatedSalesStream(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(heightFactor: 3, child: Text('No sales data for this period.'));
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-
-                final salesData = snapshot.data!;
-                final maxValue = salesData.isNotEmpty ? (salesData.map((d) => d['value'] as num).reduce(max)).toDouble() : 0.0;
-
-                return _buildChart(salesData, maxValue);
-              },
-            ),
+            if (salesData.isEmpty)
+              const Center(heightFactor: 3, child: Text('No sales data for this period.'))
+            else
+              _buildChart(salesData, maxValue),
           ],
         ),
       ),

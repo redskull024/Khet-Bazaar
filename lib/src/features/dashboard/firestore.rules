@@ -1,0 +1,69 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- USER, CART, AND ADDRESS RULES ---
+    match /users/{userId} {
+      // Users can read/write their own user document
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // Rule for the 'cart' subcollection
+      match /cart/{cartItemId} {
+        // Users can fully manage items in their own cart only
+        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // Rule for the 'addresses' subcollection
+      match /addresses/{addressId} {
+        // Users can fully manage their own delivery addresses
+        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Users can read and write their own preferences
+    match /user_preferences/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // --- PRODUCT AND ORDER RULES ---
+    match /product_listings/{listingId} {
+      // Anyone can read product listings (for buyers to browse)
+      allow read: if true;
+
+      // The farmer who owns a listing can create, delete, and fully update it.
+      allow create, delete: if request.auth != null && request.auth.uid == request.resource.data.farmerUID;
+      allow update: if request.auth != null && (
+        // Allow farmer to update all fields
+        request.auth.uid == resource.data.farmerUID ||
+        // Allow buyer to only update quantity and status when purchasing
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['quantityValue', 'status']))
+      );
+    }
+
+    match /orders/{orderId} {
+      // A user can create an order only if they are the buyer
+      allow create: if request.auth != null && request.resource.data.buyerUID == request.auth.uid;
+
+      // The buyer or farmer can read or update an order
+      allow read, update: if request.auth != null && (request.auth.uid == resource.data.buyerUID || request.auth.uid == resource.data.farmerUID);
+    }
+
+    // --- ANALYTICS RULES ---
+    match /purchase_success/{purchaseId} {
+      // A farmer can read their own sales records for their dashboard
+      allow read: if request.auth != null && request.auth.uid == resource.data.farmerUID;
+      
+      // An authenticated user can log a successful purchase
+      allow create: if request.auth != null;
+    }
+
+    match /feedback/{feedbackId} {
+      // Any authenticated user can create feedback
+      allow create: if request.auth != null;
+      // Users can read their own feedback
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Feedback should generally not be updated or deleted by users
+      allow update, delete: if false;
+    }
+  }
+}

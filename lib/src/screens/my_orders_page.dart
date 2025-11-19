@@ -1,15 +1,11 @@
+import 'package:farm_connect/src/constants/app_colors.dart';
+import 'package:farm_connect/src/widgets/app_bar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:farm_connect/src/models/delivery_info_model.dart';
 import 'package:farm_connect/src/models/order_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
-// Re-using the AppColors from the success page for theme consistency.
-class AppColors {
-  static const Color cardLightGreen = Color(0xFFE8F5E9);
-  static const Color darkGreen = Color(0xFF1B5E20);
-}
 
 class MyOrdersPage extends StatelessWidget {
   const MyOrdersPage({super.key});
@@ -20,11 +16,7 @@ class MyOrdersPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.cardLightGreen,
-      appBar: AppBar(
-        title: const Text('My Orders'),
-        backgroundColor: AppColors.darkGreen,
-        foregroundColor: Colors.white,
-      ),
+      appBar: const CustomAppBar(),
       body: user == null
           ? const Center(child: Text('Please log in to see your orders.'))
           : StreamBuilder<QuerySnapshot>(
@@ -131,7 +123,7 @@ class MyOrdersPage extends StatelessWidget {
     );
   }
 
-  Widget _buildOrderItemTile(dynamic item) {
+  Widget _buildOrderItemTile(OrderItem item) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(

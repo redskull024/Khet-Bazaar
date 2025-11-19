@@ -42,7 +42,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color.fromARGB(255, 177, 200, 183),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool isDesktop = constraints.maxWidth > 900;
@@ -75,7 +75,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
             const SizedBox(height: 4),
             Text(
               _userName != null ? 'Welcome back, $_userName!' : 'Welcome back!',
-              style: const TextStyle(fontSize: 16, color: Color.fromARGB(238, 0, 0, 0)),
+              style: const TextStyle(fontSize: 16, color: Colors.black87),
             ),
           ],
         ),
@@ -135,9 +135,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
           spacing: 24,
           runSpacing: 24,
           children: [
-            _buildMetricCard('Total Revenue', totalRevenue, Icons.attach_money, const Color.fromARGB(130, 76, 175, 79), prefix: '₹'),
-            _buildMetricCard('Total Orders', totalOrders.toDouble(), Icons.shopping_cart, const Color.fromARGB(130, 33, 149, 243)),
-            _buildMetricCard('Products Sold (kg)', productsSold, Icons.local_shipping, const Color.fromARGB(130, 0, 187, 212)),
+            _buildMetricCard('Total Revenue', totalRevenue, Icons.attach_money, const Color.fromARGB(191, 26, 98, 28), prefix: '₹'),
+            _buildMetricCard('Total Orders', totalOrders.toDouble(), Icons.shopping_cart, const Color.fromARGB(192, 22, 87, 140)),
+            _buildMetricCard('Products Sold (kg)', productsSold, Icons.local_shipping, const Color.fromARGB(192, 20, 127, 141)),
           ],
         );
       },

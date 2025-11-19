@@ -196,18 +196,14 @@ class OnboardingImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Using a placeholder as the asset is not available
-    return Container(
-      height: 400,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Center(
-        child: Text(
-          "Image Placeholder\n(assets/farmer_onboarding.png)",
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.grey),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12.0),
+      child: Image.network(
+        'https://static.wixstatic.com/media/9181a6_5f418640fb684af88c1e00e237839199~mv2.png/v1/fill/w_563,h_704,al_c,q_90,enc_auto/9181a6_5f418640fb684af88c1e00e237839199~mv2.png',
+        height: 450,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => const Center(
+          child: Text('Image not available'),
         ),
       ),
     );

@@ -3,7 +3,9 @@ import 'package:farm_connect/src/services/address_service.dart';
 import 'package:flutter/material.dart';
 
 class AddressSelectionPopup extends StatefulWidget {
-  const AddressSelectionPopup({Key? key}) : super(key: key);
+  final Function(DeliveryInfo) onAddressSelected;
+
+  const AddressSelectionPopup({Key? key, required this.onAddressSelected}) : super(key: key);
 
   @override
   _AddressSelectionPopupState createState() => _AddressSelectionPopupState();
@@ -62,7 +64,9 @@ class _AddressSelectionPopupState extends State<AddressSelectionPopup> {
         TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
         if (!_isAddingNew)
           ElevatedButton(
-            onPressed: _selectedAddress == null ? null : () => Navigator.of(context).pop(_selectedAddress),
+            onPressed: _selectedAddress == null
+                ? null
+                : () => widget.onAddressSelected(_selectedAddress!),
             child: const Text('Use This Address'),
           ),
       ],

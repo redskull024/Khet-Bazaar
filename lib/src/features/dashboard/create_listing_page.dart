@@ -159,7 +159,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
 
       try {
         if (_isEditMode) {
-          await _listingService.updateProductListing(widget.listingId!, listingData, _selectedImages);
+          await _listingService.updateProductListing(listingData, _selectedImages);
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Listing updated successfully!')));
         } else {
           await _listingService.createProductListing(listingData, _selectedImages);
@@ -273,22 +273,7 @@ class _CreateListingPageState extends State<CreateListingPage> {
             TextFormField(controller: _pricePerUnitController, decoration: const InputDecoration(labelText: 'Price per Unit (₹) *'), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Required' : null),
             TextFormField(controller: _descriptionController, decoration: const InputDecoration(labelText: 'Description'), maxLines: 3),
             const SizedBox(height: 16),
-            OutlinedButton.icon(onPressed: _pickImages, icon: const Icon(Icons.upload_file), label: const Text('Upload Images')),
-            if (_existingImageUrls.isNotEmpty || _selectedImages.isNotEmpty)
-              SizedBox(
-                height: 100,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _existingImageUrls.length + _selectedImages.length,
-                  itemBuilder: (context, index) {
-                    if (index < _existingImageUrls.length) {
-                      return Padding(padding: const EdgeInsets.all(8.0), child: Image.network(_existingImageUrls[index]));
-                    }
-                    final imageBytes = _selectedImages[index - _existingImageUrls.length];
-                    return Padding(padding: const EdgeInsets.all(8.0), child: Image.memory(imageBytes));
-                  },
-                ),
-              ),
+            _buildImagePicker(),
           ],
         ),
       ),
@@ -314,6 +299,61 @@ class _CreateListingPageState extends State<CreateListingPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildImagePicker() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        const Text('Product Images', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Container(
+          height: 120,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade400),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: _existingImageUrls.isEmpty && _selectedImages.isEmpty
+              ? Center(
+                  child: OutlinedButton.icon(
+                    onPressed: _pickImages,
+                    icon: const Icon(Icons.add_a_photo_outlined),
+                    label: const Text('Add Images'),
+                  ),
+                )
+              : ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _existingImageUrls.length + _selectedImages.length + 1,
+                  itemBuilder: (context, index) {
+                    if (index == _existingImageUrls.length + _selectedImages.length) {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: IconButton(
+                          icon: const Icon(Icons.add_circle_outline, size: 32, color: Colors.green),
+                          onPressed: _pickImages,
+                          tooltip: 'Add more images',
+                        ),
+                      );
+                    }
+
+                    Widget imageWidget;
+                    if (index < _existingImageUrls.length) {
+                      imageWidget = Image.network(_existingImageUrls[index], fit: BoxFit.cover);
+                    } else {
+                      final imageBytes = _selectedImages[index - _existingImageUrls.length];
+                      imageWidget = Image.memory(imageBytes, fit: BoxFit.cover);
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: ClipRRect(borderRadius: BorderRadius.circular(8), child: SizedBox(width: 100, height: 100, child: imageWidget)),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 }

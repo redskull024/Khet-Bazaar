@@ -95,9 +95,11 @@ class RoleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isFarmer = role == kRoleFarmer;
 
-    final String title = isFarmer ? 'Farmer' : 'Buyer';
-    final IconData icon = isFarmer ? FontAwesomeIcons.leaf : FontAwesomeIcons.shoppingCart;
-    final String imagePath = isFarmer ? 'assets/role_farmer.png' : 'assets/role_buyer.png';
+    final title = isFarmer ? 'Farmer' : 'Buyer';
+    final icon = isFarmer ? FontAwesomeIcons.leaf : FontAwesomeIcons.shoppingCart;
+    final imageUrl = isFarmer
+        ? 'https://static.wixstatic.com/media/9181a6_b190393a6def4e56a2eade1db0c6b9d4~mv2.png/v1/fill/w_430,h_269,al_c,lg_1,q_85,enc_auto/9181a6_b190393a6def4e56a2eade1db0c6b9d4~mv2.png'
+        : 'https://static.wixstatic.com/media/9181a6_c4ed74fd7aa342b781c3231a24e5bed2~mv2.png/v1/fill/w_430,h_269,al_c,lg_1,q_85,enc_auto/9181a6_c4ed74fd7aa342b781c3231a24e5bed2~mv2.png';
     final List<String> bulletPoints = isFarmer
         ? [
             'Sell produce directly to consumers',
@@ -142,20 +144,14 @@ class RoleCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          // Placeholder for image
-          Container(
-            height: 150,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Text(
-                'Placeholder for\n$imagePath',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.grey),
-              ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8.0),
+            child: Image.network(
+              imageUrl,
+              height: 150,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const Center(child: Text('Image not available')),
             ),
           ),
           const SizedBox(height: 24),
