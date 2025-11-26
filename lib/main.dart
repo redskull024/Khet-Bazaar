@@ -41,6 +41,7 @@ class MyApp extends StatelessWidget {
       darkTheme: ThemeData.dark(),
       themeMode: ThemeMode.system,
       routerConfig: _router,
+      builder: (context, child) => SafeArea(child: child!),
     );
   }
 }
