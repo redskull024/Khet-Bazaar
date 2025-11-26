@@ -7,12 +7,20 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:935255341347:android:3880fdd5bb7fa8246c7496",
+        "mobilesdk_app_id": "1:935255341347:android:13f0486673e6cc496c7496",
         "android_client_info": {
-          "package_name": "com.example.farm_connect"
+          "package_name": "com.KB.KhetBazaar"
         }
       },
       "oauth_client": [
+        {
+          "client_id": "935255341347-b4e42eurvmt0lk0s38fhstrckukln0sv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.KB.KhetBazaar",
+            "certificate_hash": "9dd74f3d7e6d9c1e8d2fba05b324b97ae9922c99"
+          }
+        },
         {
           "client_id": "935255341347-fim6cpi38bpgj9agn2a5c13gp1orhrru.apps.googleusercontent.com",
           "client_type": 3
@@ -31,10 +39,10 @@
               "client_type": 3
             },
             {
-              "client_id": "935255341347-eq8972qpukkbkp1abe85j65tfab2pp6n.apps.googleusercontent.com",
+              "client_id": "935255341347-aa1dihdq1tseomkp84ihjecm21gj5jsa.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.khetBazaar"
+                "bundle_id": "com.example.farmConnect"
               }
             }
           ]
@@ -43,12 +51,20 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:935255341347:android:7a78d3d022cebcbc6c7496",
+        "mobilesdk_app_id": "1:935255341347:android:3880fdd5bb7fa8246c7496",
         "android_client_info": {
-          "package_name": "com.example.khet_bazaar"
+          "package_name": "com.example.farm_connect"
         }
       },
       "oauth_client": [
+        {
+          "client_id": "935255341347-lrdsq6gtivglfmku34qc4j92gu3f7k66.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.farm_connect",
+            "certificate_hash": "9dd74f3d7e6d9c1e8d2fba05b324b97ae9922c99"
+          }
+        },
         {
           "client_id": "935255341347-fim6cpi38bpgj9agn2a5c13gp1orhrru.apps.googleusercontent.com",
           "client_type": 3
@@ -67,10 +83,10 @@
               "client_type": 3
             },
             {
-              "client_id": "935255341347-eq8972qpukkbkp1abe85j65tfab2pp6n.apps.googleusercontent.com",
+              "client_id": "935255341347-aa1dihdq1tseomkp84ihjecm21gj5jsa.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.khetBazaar"
+                "bundle_id": "com.example.farmConnect"
               }
             }
           ]
@@ -111,10 +127,10 @@
               "client_type": 3
             },
             {
-              "client_id": "935255341347-eq8972qpukkbkp1abe85j65tfab2pp6n.apps.googleusercontent.com",
+              "client_id": "935255341347-aa1dihdq1tseomkp84ihjecm21gj5jsa.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.khetBazaar"
+                "bundle_id": "com.example.farmConnect"
               }
             }
           ]
