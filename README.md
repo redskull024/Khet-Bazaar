@@ -5,17 +5,103 @@
 Khet-Bazaar is a cross-platform farmer–buyer marketplace built with Flutter and Firebase. It connects farmers and buyers through a simple, real-time, and mobile-first experience. The goal is to simplify agricultural trading and improve access to fresh produce.
 
 ```mermaid
-flowchart TD
-    U[User]
-    A[Flutter app]
-    FA[Firebase Authentication]
-    FS[Cloud Firestore or Realtime Database]
-    ST[Firebase Storage]
+flowchart LR
 
-    U --> A
-    A --> FA
-    A --> FS
-    A --> ST
+%% =========================
+%% FRONTEND LAYER
+%% =========================
+subgraph FL[Frontend Layer]
+
+    LSS[Language Selection Screen]
+    RSS[Role Selection Screen]
+    LOGIN[Login / Sign-in Page]
+
+    LSS --> RSS --> LOGIN
+
+    %% Buyer & Farmer branch
+    BUYER_SELECTED((Buyer Selected))
+    FARMER_SELECTED((Farmer Selected))
+
+    LOGIN --> BUYER_SELECTED
+    LOGIN --> FARMER_SELECTED
+
+    %% Buyer Flow
+    subgraph BF[Buyer Flow]
+        HOME_B[Home Page]
+        CART[Cart Page]
+        ORDERS[Orders Page]
+        PAYMENT[Payment Page]
+        BACK[Back / Unavailable]
+
+        BUYER_SELECTED --> HOME_B
+        HOME_B --> CART --> ORDERS --> PAYMENT
+        HOME_B --> BACK
+    end
+
+    %% Farmer Flow
+    subgraph FF[Farmer Flow]
+        F_DASH[Farmer Dashboard]
+        ADD_P[Add Product Page]
+        EDIT_P[Product List / Edit]
+        ABOUT[About Us Page]
+
+        FARMER_SELECTED --> F_DASH
+        F_DASH --> ADD_P --> EDIT_P
+        F_DASH --> ABOUT
+    end
+end
+
+%% =========================
+%% BACKEND LAYER
+%% =========================
+subgraph BL[Backend Layer]
+
+    AUTH[Firebase Authentication]
+    CF[Firebase Cloud Functions]
+    DVP1[Data Validation & Processing]
+    DVP2[Data Validation & Processing]
+    SYNC[Data Sync Service]
+
+    AUTH --> DVP1 --> CF --> DVP2 --> SYNC
+end
+
+%% =========================
+%% DATABASE LAYER
+%% =========================
+subgraph DBL[Database Layer]
+    FIRESTORE[(Firestore)]
+    RTDB[(Realtime DB)]
+end
+
+%% =========================
+%% DATA FLOW CONNECTIONS
+%% =========================
+
+%% Frontend → Backend → Database
+LSS --> AUTH
+RSS --> AUTH
+LOGIN --> AUTH
+
+SYNC --> FIRESTORE
+SYNC --> RTDB
+
+%% Display Updated Data
+FIRESTORE --> F_DASH
+FIRESTORE --> HOME_B
+FIRESTORE --> LOGIN
+RTDB --> F_DASH
+RTDB --> HOME_B
+RTDB --> LOGIN
+
+%% Storage & Sync
+subgraph STORAGE[ ]
+    direction LR
+    STG[(Firebase Storage)]
+end
+
+EDIT_P --> STG
+ADD_P --> STG
+CART --> STG
 ```
 
 ## Features
